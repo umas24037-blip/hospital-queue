@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartQueue — My Bookings</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563eb;--blue-dark:#1d4ed8;--blue-light:#eff6ff;
+  --green:#16a34a;--red:#dc2626;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;
+  --gray-400:#94a3b8;--gray-600:#475569;--gray-800:#1e293b;
+  --radius:12px;--shadow:0 4px 24px rgba(0,0,0,.08);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray-50);min-height:100vh;padding-top:4.5rem}
+
+nav{
+  position:fixed;top:0;left:0;right:0;background:#fff;
+  border-bottom:1px solid var(--gray-200);padding:.9rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.06);
+}
+.nav-brand{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.1rem;color:var(--blue)}
+.nav-brand span{font-size:1.4rem}
+.nav-links{display:flex;gap:.5rem}
+.nav-links a{
+  padding:.45rem .9rem;border-radius:8px;font-size:.82rem;
+  font-weight:600;text-decoration:none;color:var(--gray-600);transition:all .2s;
+}
+.nav-links a:hover{background:var(--blue-light);color:var(--blue)}
+.nav-links a.active{background:var(--blue);color:#fff}
+
+.container{max-width:700px;margin:0 auto;padding:2rem 1rem}
+
+.page-header{margin-bottom:1.75rem}
+.page-title{font-size:1.5rem;font-weight:800;color:var(--gray-800)}
+.page-sub{color:var(--gray-400);font-size:.85rem;margin-top:.25rem}
+
+/* Search bar */
+.search-card{
+  background:#fff;border-radius:16px;padding:1.4rem;
+  box-shadow:var(--shadow);margin-bottom:1.5rem;
+}
+.search-row{display:flex;gap:.6rem}
+.search-row input{
+  flex:1;padding:.75rem 1rem;
+  border:1.5px solid var(--gray-200);border-radius:var(--radius);
+  font-size:.95rem;outline:none;transition:border .2s,box-shadow .2s;
+}
+.search-row input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.search-row button{
+  padding:.75rem 1.4rem;background:var(--blue);color:#fff;
+  border:none;border-radius:var(--radius);font-size:.9rem;
+  font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.search-row button:hover{background:var(--blue-dark);transform:translateY(-1px)}
+
+/* Patient card */
+.patient-card{
+  background:#fff;border-radius:16px;padding:1.2rem 1.4rem;
+  box-shadow:var(--shadow);margin-bottom:1.2rem;
+  display:flex;align-items:center;gap:1rem;
+  border-left:4px solid var(--blue);
+}
+.avatar{
+  width:48px;height:48px;border-radius:50%;
+  background:var(--blue-light);display:flex;align-items:center;
+  justify-content:center;font-size:1.4rem;flex-shrink:0;
+}
+.patient-name{font-weight:800;font-size:1.05rem;color:var(--gray-800)}
+.patient-meta{font-size:.8rem;color:var(--gray-400);margin-top:.2rem;display:flex;gap:.8rem;flex-wrap:wrap}
+
+/* Section header */
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.85rem;
+}
+.section-title{font-size:.75rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.07em}
+.count-badge{
+  background:var(--blue-light);color:var(--blue);
+  font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;
+}
+
+/* Booking card */
+.booking{
+  background:#fff;border-radius:16px;padding:1.2rem 1.4rem;
+  margin-bottom:.85rem;box-shadow:var(--shadow);
+  border-left:4px solid var(--gray-200);transition:transform .2s;
+}
+.booking:hover{transform:translateY(-2px)}
+.booking.p5{border-left-color:#dc2626}
+.booking.p4{border-left-color:#ea580c}
+.booking.p3{border-left-color:#ca8a04}
+.booking.p2{border-left-color:#16a34a}
+.booking.p1{border-left-color:#2563eb}
+
+.booking-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;flex-wrap:wrap}
+.doc-info .doc-name{font-weight:700;font-size:.95rem;color:var(--gray-800)}
+.doc-info .doc-spec{font-size:.78rem;color:var(--gray-400);margin-top:.1rem}
+
+.badges{display:flex;flex-direction:column;align-items:flex-end;gap:.3rem}
+.badge{
+  display:inline-block;padding:.22rem .7rem;
+  border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap;
+}
+.u5{background:#fef2f2;color:#991b1b}
+.u4{background:#fff7ed;color:#9a3412}
+.u3{background:#fefce8;color:#854d0e}
+.u2{background:#f0fdf4;color:#166534}
+.u1{background:#eff6ff;color:#1e40af}
+.s-waiting{background:#fff7ed;color:#9a3412}
+.s-in_progress{background:#f0fdf4;color:#166534}
+.s-done{background:var(--gray-100);color:var(--gray-600)}
+.s-cancelled{background:#fef2f2;color:#991b1b}
+
+.booking-stats{
+  display:flex;flex-wrap:wrap;gap:.4rem 1rem;
+  margin-top:.85rem;padding-top:.85rem;
+  border-top:1px solid var(--gray-100);
+}
+.stat{display:flex;align-items:center;gap:.3rem;font-size:.78rem;color:var(--gray-600)}
+.stat strong{color:var(--gray-800)}
+
+.symptoms-box{
+  margin-top:.75rem;background:var(--gray-50);
+  border-radius:8px;padding:.55rem .8rem;
+  font-size:.8rem;color:var(--gray-600);line-height:1.5;
+}
+
+/* States */
+.alert{
+  background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);
+  padding:.75rem 1rem;font-size:.85rem;color:#991b1b;margin-bottom:1rem;display:none;
+}
+#loader{text-align:center;color:var(--gray-400);padding:2rem 0;display:none}
+.spinner{
+  display:inline-block;width:20px;height:20px;
+  border:2.5px solid var(--gray-200);border-top-color:var(--blue);
+  border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:.4rem;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#results{display:none}
+.empty{text-align:center;color:var(--gray-400);padding:3rem 0;font-size:.9rem}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span>🏥</span> SmartQueue</div>
+  <div class="nav-links">
+    <a href="index.html">Book</a>
+    <a href="search.html" class="active">My Bookings</a>
+    <a href="queue-display.html">Live Queue</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">🔍 My Bookings</div>
+    <div class="page-sub">Search by mobile number to view all your appointments</div>
+  </div>
+
+  <div class="search-card">
+    <div class="search-row">
+      <input id="phoneInput" type="tel" placeholder="Enter mobile number e.g. 03001234567"
+             onkeydown="if(event.key==='Enter') search()">
+      <button onclick="search()">Search</button>
+    </div>
+  </div>
+
+  <div class="alert" id="alertBox"></div>
+  <div id="loader"><span class="spinner"></span> Searching…</div>
+
+  <div id="results">
+    <div class="patient-card" id="patientCard"></div>
+    <div class="section-header">
+      <div class="section-title">Booking History</div>
+      <div class="count-badge" id="countBadge"></div>
+    </div>
+    <div id="bookingList"></div>
+  </div>
+</div>
+
+<script>
+const URGENCY = {5:['🚨 Emergency','u5'],4:['⚠️ Urgent','u4'],3:['🟡 Semi-Urgent','u3'],2:['🟢 Non-Urgent','u2'],1:['🔵 Routine','u1']};
+const STATUS  = {waiting:'⏳ Waiting',in_progress:'🟢 In Progress',done:'✅ Done',cancelled:'❌ Cancelled'};
+
+async function search() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone) { showAlert('Please enter a phone number.'); return; }
+  hide('results'); hide('alertBox');
+  show('loader');
+  try {
+    const res  = await fetch(`api/search.php?phone=${encodeURIComponent(phone)}`);
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { throw new Error('Server error: ' + text.replace(/<[^>]+>/g,'').trim().slice(0,120)); }
+    if (!res.ok) throw new Error(data.error || 'Not found');
+    render(data);
+  } catch(e) {
+    showAlert(e.message);
+  } finally {
+    hide('loader');
+  }
+}
+
+function render({patient, bookings}) {
+  document.getElementById('patientCard').innerHTML = `
+    <div class="avatar">👤</div>
+    <div>
+      <div class="patient-name">${esc(patient.name)}</div>
+      <div class="patient-meta">
+        <span>📞 ${esc(patient.phone)}</span>
+        <span>📅 Since ${fmtDate(patient.created_at)}</span>
+        <span>📋 ${bookings.length} booking${bookings.length!==1?'s':''}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('countBadge').textContent = bookings.length + ' total';
+
+  const list = document.getElementById('bookingList');
+  if (!bookings.length) {
+    list.innerHTML = '<div class="empty">No bookings found for this patient.</div>';
+  } else {
+    list.innerHTML = bookings.map(b => {
+      const p = b.priority_score;
+      const [ulabel, ucls] = URGENCY[p] || ['Unknown','u1'];
+      const slabel = STATUS[b.status] || b.status;
+      const isWaiting = b.status === 'waiting';
+      return `
+      <div class="booking p${p}">
+        <div class="booking-top">
+          <div class="doc-info">
+            <div class="doc-name">${esc(b.doctor_name)}</div>
+            <div class="doc-spec">${esc(b.specialty)}</div>
+          </div>
+          <div class="badges">
+            <span class="badge ${ucls}">${ulabel}</span>
+            <span class="badge s-${b.status}">${slabel}</span>
+          </div>
+        </div>
+        <div class="booking-stats">
+          ${isWaiting ? `<div class="stat">🔢 Position <strong>#${b.queue_position}</strong></div>` : ''}
+          ${isWaiting ? `<div class="stat">⏱ Wait <strong>~${b.estimated_wait_time} min</strong></div>` : ''}
+          <div class="stat">📅 <strong>${fmtDate(b.booked_at)}</strong></div>
+        </div>
+        <div class="symptoms-box">💬 ${esc(b.raw_symptoms)}</div>
+      </div>`;
+    }).join('');
+  }
+  show('results');
+}
+
+function showAlert(msg){const el=document.getElementById('alertBox');el.textContent=msg;el.style.display='block'}
+function show(id){document.getElementById(id).style.display='block'}
+function hide(id){document.getElementById(id).style.display='none'}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtDate(s){return s?new Date(s).toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'short'}):'—'}
+</script>
+</body>
+</html>

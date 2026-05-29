@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartQueue — Book Appointment</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --blue:#2563eb;--blue-dark:#1d4ed8;--blue-light:#eff6ff;
+  --green:#16a34a;--orange:#ea580c;--red:#dc2626;--yellow:#ca8a04;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-200:#e2e8f0;
+  --gray-400:#94a3b8;--gray-600:#475569;--gray-800:#1e293b;
+  --radius:12px;--shadow:0 4px 24px rgba(0,0,0,.08);
+}
+
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--gray-50);min-height:100vh;
+  display:grid;place-items:center;padding:1rem;
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;
+  background:#fff;border-bottom:1px solid var(--gray-200);
+  padding:.9rem 1.5rem;display:flex;align-items:center;
+  justify-content:space-between;z-index:100;
+  box-shadow:0 1px 8px rgba(0,0,0,.06);
+}
+.nav-brand{display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.1rem;color:var(--blue)}
+.nav-brand span{font-size:1.4rem}
+.nav-links{display:flex;gap:.5rem}
+.nav-links a{
+  padding:.45rem .9rem;border-radius:8px;font-size:.82rem;
+  font-weight:600;text-decoration:none;color:var(--gray-600);
+  transition:all .2s;
+}
+.nav-links a:hover{background:var(--blue-light);color:var(--blue)}
+.nav-links a.active{background:var(--blue);color:#fff}
+
+/* ── MAIN CARD ── */
+.card{
+  background:#fff;border-radius:20px;
+  box-shadow:var(--shadow);width:100%;max-width:460px;
+  padding:2.2rem;margin-top:4.5rem;
+}
+
+.card-header{margin-bottom:1.8rem}
+.card-title{font-size:1.35rem;font-weight:800;color:var(--gray-800)}
+.card-sub{color:var(--gray-400);font-size:.85rem;margin-top:.25rem}
+
+/* ── STEPS ── */
+.steps-wrap{display:flex;align-items:center;gap:.4rem;margin-bottom:1.8rem}
+.step-item{display:flex;align-items:center;gap:.4rem;flex:1}
+.step-circle{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:700;flex-shrink:0;
+  background:var(--gray-200);color:var(--gray-400);transition:all .3s;
+}
+.step-circle.done{background:var(--green);color:#fff}
+.step-circle.active{background:var(--blue);color:#fff}
+.step-label{font-size:.75rem;color:var(--gray-400);font-weight:600;transition:color .3s}
+.step-label.active{color:var(--blue)}
+.step-line{flex:1;height:2px;background:var(--gray-200);border-radius:2px;transition:background .3s}
+.step-line.done{background:var(--green)}
+
+/* ── FORM ── */
+.field{margin-bottom:1.1rem}
+label{display:block;font-size:.78rem;font-weight:700;color:var(--gray-600);margin-bottom:.4rem;letter-spacing:.02em}
+label .req{color:var(--red)}
+
+input,select,textarea{
+  width:100%;padding:.72rem 1rem;
+  border:1.5px solid var(--gray-200);border-radius:var(--radius);
+  font-size:.93rem;font-family:inherit;outline:none;
+  transition:border .2s,box-shadow .2s;background:#fff;color:var(--gray-800);
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+}
+textarea{resize:none;height:88px;line-height:1.5}
+
+.input-icon{position:relative}
+.input-icon input{padding-left:2.6rem}
+.input-icon .icon{
+  position:absolute;left:.85rem;top:50%;transform:translateY(-50%);
+  font-size:1rem;pointer-events:none;
+}
+
+/* ── VOICE ── */
+.voice-wrap{position:relative}
+.voice-wrap textarea{padding-right:3rem}
+#micBtn{
+  position:absolute;right:.6rem;bottom:.6rem;
+  background:none;border:none;cursor:pointer;
+  font-size:1.3rem;line-height:1;padding:.2rem;
+  border-radius:6px;transition:background .2s;
+}
+#micBtn:hover{background:var(--gray-100)}
+#micBtn.listening{color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:.82rem;border:none;border-radius:var(--radius);
+  font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+.btn-primary:disabled{background:var(--gray-400);transform:none;box-shadow:none;cursor:not-allowed}
+.btn-ghost{background:none;color:var(--blue);font-size:.83rem;font-weight:600;margin-top:.6rem;padding:.5rem;width:auto;display:block;margin-inline:auto}
+.btn-ghost:hover{text-decoration:underline}
+
+/* ── LOADER ── */
+#loader{display:none;text-align:center;padding:.8rem 0;color:var(--gray-600);font-size:.88rem}
+.spinner{
+  display:inline-block;width:18px;height:18px;
+  border:2.5px solid var(--gray-200);border-top-color:var(--blue);
+  border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:.4rem;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CONFIRMATION ── */
+#confirmation{display:none;text-align:center}
+.conf-icon{font-size:3rem;margin-bottom:.5rem}
+.conf-title{font-size:1.1rem;font-weight:800;color:var(--gray-800);margin-bottom:.25rem}
+
+.urgency-badge{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.35rem 1rem;border-radius:20px;
+  font-size:.82rem;font-weight:700;margin:.75rem 0;
+}
+.u5{background:#fef2f2;color:#991b1b}
+.u4{background:#fff7ed;color:#9a3412}
+.u3{background:#fefce8;color:#854d0e}
+.u2{background:#f0fdf4;color:#166534}
+.u1{background:#eff6ff;color:#1e40af}
+
+.queue-num{
+  font-size:4.5rem;font-weight:900;color:var(--blue);
+  line-height:1;margin:.5rem 0 .2rem;
+}
+.queue-label{font-size:.8rem;color:var(--gray-400);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.eta-pill{
+  display:inline-block;background:var(--gray-100);
+  border-radius:20px;padding:.4rem 1rem;
+  font-size:.85rem;color:var(--gray-600);margin:1rem 0;
+}
+
+.conf-actions{display:flex;gap:.6rem;margin-top:1.2rem;flex-wrap:wrap}
+.conf-actions a{
+  flex:1;padding:.65rem;border-radius:var(--radius);
+  font-size:.82rem;font-weight:600;text-decoration:none;
+  text-align:center;transition:all .2s;min-width:120px;
+}
+.conf-actions .a-queue{background:var(--blue-light);color:var(--blue)}
+.conf-actions .a-search{background:var(--gray-100);color:var(--gray-600)}
+.conf-actions a:hover{filter:brightness(.95)}
+
+.new-booking-btn{
+  margin-top:.8rem;background:none;border:none;
+  color:var(--blue);font-size:.83rem;font-weight:600;
+  cursor:pointer;text-decoration:underline;
+}
+
+/* ── DOCTOR CARDS ── */
+.doctor-grid{display:grid;gap:.6rem;margin-bottom:1.1rem}
+.doctor-card{
+  border:1.5px solid var(--gray-200);border-radius:var(--radius);
+  padding:.75rem 1rem;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:.75rem;
+}
+.doctor-card:hover{border-color:var(--blue);background:var(--blue-light)}
+.doctor-card.selected{border-color:var(--blue);background:var(--blue-light)}
+.doctor-card input[type=radio]{display:none}
+.doc-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:var(--blue-light);display:flex;align-items:center;
+  justify-content:center;font-size:1.1rem;flex-shrink:0;
+}
+.doc-name{font-weight:700;font-size:.88rem;color:var(--gray-800)}
+.doc-spec{font-size:.75rem;color:var(--gray-400);margin-top:.1rem}
+.doc-time{font-size:.72rem;color:var(--blue);margin-top:.15rem;font-weight:600}
+
+/* ── ERROR ── */
+.alert{
+  background:#fef2f2;border:1px solid #fecaca;
+  border-radius:var(--radius);padding:.7rem 1rem;
+  font-size:.83rem;color:#991b1b;margin-bottom:1rem;display:none;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span>🏥</span> SmartQueue</div>
+  <div class="nav-links">
+    <a href="index.html" class="active">Book</a>
+    <a href="search.html">My Bookings</a>
+    <a href="queue-display.html">Live Queue</a>
+  </div>
+</nav>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Book Appointment</div>
+    <div class="card-sub">AI-powered triage · Under 30 seconds</div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps-wrap">
+    <div class="step-item">
+      <div class="step-circle active" id="sc1">1</div>
+      <div class="step-label active" id="sl1">Your Info</div>
+    </div>
+    <div class="step-line" id="sline"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc2">2</div>
+      <div class="step-label" id="sl2">Symptoms</div>
+    </div>
+  </div>
+
+  <div class="alert" id="alertBox"></div>
+
+  <!-- STEP 1 -->
+  <div id="step1">
+    <div class="field">
+      <label>Full Name <span class="req">*</span></label>
+      <div class="input-icon">
+        <span class="icon">👤</span>
+        <input id="name" type="text" placeholder="e.g. Ali Hassan" autocomplete="name">
+      </div>
+    </div>
+    <div class="field">
+      <label>Phone Number <span class="req">*</span></label>
+      <div class="input-icon">
+        <span class="icon">📞</span>
+        <input id="phone" type="tel" placeholder="03001234567" autocomplete="tel">
+      </div>
+    </div>
+    <div class="field">
+      <label>Select Doctor <span class="req">*</span></label>
+      <div class="doctor-grid">
+        <label class="doctor-card" id="dc1">
+          <input type="radio" name="doctor" value="1" onchange="selectDoc(1)">
+          <div class="doc-avatar">👩‍⚕️</div>
+          <div><div class="doc-name">Dr. Ayesha Khan</div><div class="doc-spec">General Physician</div><div class="doc-time">⏱ ~8 min/patient</div></div>
+        </label>
+        <label class="doctor-card" id="dc2">
+          <input type="radio" name="doctor" value="2" onchange="selectDoc(2)">
+          <div class="doc-avatar">👨‍⚕️</div>
+          <div><div class="doc-name">Dr. Bilal Ahmed</div><div class="doc-spec">Cardiologist</div><div class="doc-time">⏱ ~15 min/patient</div></div>
+        </label>
+        <label class="doctor-card" id="dc3">
+          <input type="radio" name="doctor" value="3" onchange="selectDoc(3)">
+          <div class="doc-avatar">👩‍⚕️</div>
+          <div><div class="doc-name">Dr. Sara Malik</div><div class="doc-spec">Pediatrician</div><div class="doc-time">⏱ ~10 min/patient</div></div>
+        </label>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="goStep2()">Continue <span>→</span></button>
+  </div>
+
+  <!-- STEP 2 -->
+  <div id="step2" style="display:none">
+    <div class="field">
+      <label>Describe Symptoms <span class="req">*</span> <small style="color:var(--gray-400);font-weight:400">— type or tap 🎤</small></label>
+      <div class="voice-wrap">
+        <textarea id="symptoms" placeholder="e.g. chest pain and shortness of breath for 2 hours…"></textarea>
+        <button id="micBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
+      </div>
+    </div>
+    <div id="loader"><span class="spinner"></span> AI is analyzing your symptoms…</div>
+    <button class="btn btn-primary" id="bookBtn" onclick="submitBooking()">✓ Confirm Booking</button>
+    <button class="btn-ghost" onclick="goStep1()">← Back</button>
+  </div>
+
+  <!-- CONFIRMATION -->
+  <div id="confirmation">
+    <div class="conf-icon">✅</div>
+    <div class="conf-title">Booking Confirmed!</div>
+    <div id="urgencyBadge" class="urgency-badge"></div>
+    <div class="queue-num" id="queuePos">—</div>
+    <div class="queue-label">Your Queue Number</div>
+    <div class="eta-pill" id="etaText"></div>
+    <div style="font-size:.8rem;color:var(--gray-400)">Show this screen at reception or wait for your name.</div>
+    <div class="conf-actions">
+      <a href="queue-display.html" class="a-queue">📺 Live Queue</a>
+      <a href="search.html" class="a-search">🔍 My Bookings</a>
+    </div>
+    <button class="new-booking-btn" onclick="resetForm()">+ Book Another</button>
+  </div>
+</div>
+
+<script>
+let selectedDoctor = 0;
+
+function selectDoc(id) {
+  [1,2,3].forEach(i => document.getElementById('dc'+i).classList.remove('selected'));
+  document.getElementById('dc'+id).classList.add('selected');
+  selectedDoctor = id;
+}
+
+function showAlert(msg) {
+  const el = document.getElementById('alertBox');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+function goStep2() {
+  const name  = document.getElementById('name').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  if (!name)          { showAlert('Please enter your name.'); return; }
+  if (!phone)         { showAlert('Please enter your phone number.'); return; }
+  if (!selectedDoctor){ showAlert('Please select a doctor.'); return; }
+  document.getElementById('alertBox').style.display = 'none';
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('sc1').className = 'step-circle done'; document.getElementById('sc1').textContent = '✓';
+  document.getElementById('sc2').className = 'step-circle active';
+  document.getElementById('sl2').className = 'step-label active';
+  document.getElementById('sline').className = 'step-line done';
+}
+
+function goStep1() {
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('sc1').className = 'step-circle active'; document.getElementById('sc1').textContent = '1';
+  document.getElementById('sc2').className = 'step-circle';
+  document.getElementById('sl2').className = 'step-label';
+  document.getElementById('sline').className = 'step-line';
+}
+
+async function submitBooking() {
+  const symptoms = document.getElementById('symptoms').value.trim();
+  if (!symptoms) { showAlert('Please describe your symptoms.'); return; }
+
+  document.getElementById('bookBtn').disabled = true;
+  document.getElementById('loader').style.display = 'block';
+  document.getElementById('alertBox').style.display = 'none';
+
+  try {
+    const res  = await fetch('api/book.php', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name:      document.getElementById('name').value.trim(),
+        phone:     document.getElementById('phone').value.trim(),
+        symptoms,
+        doctor_id: selectedDoctor,
+      }),
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch { throw new Error('Server error: ' + text.replace(/<[^>]+>/g,'').trim().slice(0,120)); }
+    if (!res.ok) throw new Error(data.error || 'Booking failed');
+    showConfirmation(data);
+  } catch(e) {
+    showAlert('Error: ' + e.message);
+    document.getElementById('bookBtn').disabled = false;
+  } finally {
+    document.getElementById('loader').style.display = 'none';
+  }
+}
+
+const URGENCY = {5:['🚨 Emergency','u5'],4:['⚠️ Urgent','u4'],3:['🟡 Semi-Urgent','u3'],2:['🟢 Non-Urgent','u2'],1:['🔵 Routine','u1']};
+
+function showConfirmation(data) {
+  document.getElementById('step2').style.display = 'none';
+  const [label, cls] = URGENCY[data.priority_score] || ['Booked','u1'];
+  const badge = document.getElementById('urgencyBadge');
+  badge.textContent = label; badge.className = 'urgency-badge ' + cls;
+  document.getElementById('queuePos').textContent = '#' + data.position;
+  document.getElementById('etaText').textContent = data.eta_minutes > 0
+    ? `⏱ Estimated wait: ~${data.eta_minutes} minutes`
+    : '⚡ You are next! Please proceed to the counter.';
+  document.getElementById('confirmation').style.display = 'block';
+}
+
+function resetForm() {
+  document.getElementById('confirmation').style.display = 'none';
+  document.getElementById('name').value = '';
+  document.getElementById('phone').value = '';
+  document.getElementById('symptoms').value = '';
+  document.getElementById('bookBtn').disabled = false;
+  selectedDoctor = 0;
+  [1,2,3].forEach(i => document.getElementById('dc'+i).classList.remove('selected'));
+  goStep1();
+}
+
+// Voice
+let recognition, listening = false;
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    showAlert('Voice input not supported. Use Chrome.'); return;
+  }
+  if (listening) { recognition.stop(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-US'; recognition.interimResults = true;
+  recognition.onstart = () => { listening = true;  micBtn.classList.add('listening'); };
+  recognition.onend   = () => { listening = false; micBtn.classList.remove('listening'); };
+  recognition.onresult = e => {
+    document.getElementById('symptoms').value =
+      Array.from(e.results).map(r => r[0].transcript).join('');
+  };
+  recognition.start();
+}
+</script>
+</body>
+</html>
